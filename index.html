@@ -1,5 +1,4 @@
-import React from "react";
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   AreaChart,
   Area,
@@ -12,8 +11,25 @@ import {
   Bar,
   ReferenceArea,
   Legend,
+  Cell,
+  LabelList,
 } from "recharts";
-import { Cell, LabelList } from "recharts";
+
+// =====================================
+// Head meta injection (no visual changes)
+// =====================================
+// Ensures search engines do NOT index this microsite.
+function useNoIndex() {
+  useEffect(() => {
+    let meta = document.querySelector('meta[name="robots"]');
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.setAttribute('name', 'robots');
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute('content', 'noindex,nofollow');
+  }, []);
+}
 
 // =====================
 // Brand Tokens
@@ -31,10 +47,11 @@ const brand = {
   subtext: "#9CA3AF", // gray-400
   accent: "#22D3EE", // cyan-400
   positive: "#10B981",
-  neutral: "#94A3B8",
+  neutral: "#4B5563",
   warn: "#F59E0B",
 };
 
+// Subtle emerald gradient background
 const GradientBG = () => (
   <div
     className="fixed inset-0 -z-10"
@@ -46,14 +63,14 @@ const GradientBG = () => (
 );
 
 // =====================
-// Data (Accurate to provided figures)
+// Data (accurate to your figures)
 // =====================
 const last28Days = Array.from({ length: 28 }, (_, i) => ({ day: i + 1, views: 0 }));
-// distribute 10 views across days 1-21
+// distribute 10 views across days 1-21 (low baseline)
 [1, 3, 6, 9, 12, 16, 18, 20, 21, 5].forEach((d) => {
   last28Days[d - 1].views = (last28Days[d - 1].views || 0) + 1;
 });
-// last 7 days (days 22-28): 18,19,20,21,20,22,22 => sum 142
+// last 7 days (days 22-28): sums to 142
 [18, 19, 20, 21, 20, 22, 22].forEach((v, idx) => {
   last28Days[21 + idx].views = v;
 });
@@ -73,8 +90,11 @@ const summary = {
 
 const benchmarkBars = [
   { label: "DM Avg (5–20%)", rate: 20 },
-  { label: "Paid Email Svcs (18–25%)", rate: 25 },
-  { label: `Your Reply Rate (~${Math.round((summary.replies / summary.newConnections) * 100)}%)`, rate: Math.round((summary.replies / summary.newConnections) * 100) },
+  { label: "LinkedIn Paid Email Services (18–25%)", rate: 25 },
+  {
+    label: `Your Reply Rate (~${Math.round((summary.replies / summary.newConnections) * 100)}%)`,
+    rate: Math.round((summary.replies / summary.newConnections) * 100),
+  },
 ];
 
 const stackedMessageData = [
@@ -145,13 +165,11 @@ const ViewsTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-// =====================
-// Main Component
-// =====================
 export default function ClientDeliveryMicrosite() {
+  useNoIndex();
   const [showBenchDetails, setShowBenchDetails] = useState(false);
 
-  // Pipeline steps (explicit roles + new second-touch funnel)
+  // Pipeline steps (explicit roles + second-touch funnel)
   const pipelineSteps = [
     { title: "Replies → Hit List", role: "My team action" },
     { title: "Engage (Like/Comment)", role: "Your team action" },
@@ -245,7 +263,7 @@ export default function ClientDeliveryMicrosite() {
                     <YAxis tick={{ fill: "#9CA3AF", fontSize: 12 }} />
                     <Tooltip cursor={{ fill: "#0f172a" }} formatter={(v) => [v, ""]} />
                     <Legend wrapperStyle={{ color: "#9CA3AF" }} />
-                    <Bar dataKey="replied" stackId="a" name="Replied" fill="#10B981" radius={[8, 8, 0, 0]} />
+                    <Bar dataKey="replied" stackId="a" name="Replied" fill={brand.positive} radius={[8, 8, 0, 0]} />
                     <Bar dataKey="notReplied" stackId="a" name="No Reply Yet" fill="#1F2937" radius={[8, 8, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -268,21 +286,21 @@ export default function ClientDeliveryMicrosite() {
                       <YAxis type="category" dataKey="label" tick={{ fill: "#9CA3AF", fontSize: 12 }} width={460} />
                       <Tooltip formatter={(v) => [`${v}%`, "Reply Rate"]} />
                       <Bar dataKey="rate" radius={[0, 8, 8, 0]}>
-                      {benchmarkBars.map((_, idx) => (
-                        <Cell key={`bench-cell-${idx}`} fill={idx < 2 ? "#4B5563" : brand.emeraldMid} />
-                      ))}
-                      <LabelList dataKey="rate" position="right" formatter={(v) => `${v}%`} />
+                        {benchmarkBars.map((_, idx) => (
+                          <Cell key={`bench-cell-${idx}`} fill={idx < 2 ? brand.neutral : brand.emeraldMid} />
+                        ))}
+                        <LabelList dataKey="rate" position="right" formatter={(v) => `${v}%`} />
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
                 <p className="mt-2 text-xs leading-5 text-gray-400">
-                  Typical ranges: DMs (5–20%), LinkedIn Paid Email Services (18–25%). Your current reply rate is ~50%. (Short labels shown above for readability.)
+                  Typical ranges: DMs (5–20%), LinkedIn Paid Email Services (18–25%). Your current reply rate is ~50%.
                 </p>
               </div>
 
               <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 text-sm leading-6 text-gray-300">
-                <p className="text-gray-300">
+                <p>
                   Most people pitch immediately or use a disguised “give.” Your message is neutral and confident — no pressure, no pretense — which is why people reply at ~50%.
                 </p>
               </div>
@@ -300,7 +318,7 @@ export default function ClientDeliveryMicrosite() {
                 {idx < pipelineSteps.length - 1 && (
                   <div className="pointer-events-none absolute -right-3 top-1/2 hidden translate-y-[-50%] md:block">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <path d="M5 12h14m-6-6 6 6-6 6" stroke="#10B981" strokeWidth="1.5" strokeLinecap="round" />
+                      <path d="M5 12h14m-6-6 6 6-6 6" stroke={brand.positive} strokeWidth="1.5" strokeLinecap="round" />
                     </svg>
                   </div>
                 )}
@@ -316,8 +334,8 @@ export default function ClientDeliveryMicrosite() {
             <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
               <h4 className="text-base font-semibold text-gray-200">Track One: Managed on My Side</h4>
               <ul className="mt-2 list-disc pl-5 text-sm text-gray-400">
-                <li>Add every reply to the <strong className="text-gray-200\">Hit List</strong>.</li>
-                <li>For anyone who hasn’t replied after 7 days, we send a second message and start the <strong className="text-gray-200\">Second Touch Momentum Funnel™</strong>.</li>
+                <li>Add every reply to the <strong className="text-gray-200">Hit List</strong>.</li>
+                <li>For anyone who hasn’t replied after 7 days, we send a second message and start the <strong className="text-gray-200">Second Touch Momentum Funnel™</strong>.</li>
                 <li>Continue first messages to new ICP connections to grow the pool.</li>
               </ul>
             </div>
@@ -344,7 +362,7 @@ export default function ClientDeliveryMicrosite() {
                     <XAxis dataKey="name" tick={{ fill: "#9CA3AF", fontSize: 12 }} />
                     <YAxis tick={{ fill: "#9CA3AF", fontSize: 12 }} />
                     <Tooltip formatter={(v) => [v, "Connections"]} />
-                    <Bar dataKey="value" fill="#10B981" radius={[8, 8, 0, 0]} />
+                    <Bar dataKey="value" fill={brand.positive} radius={[8, 8, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
