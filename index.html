@@ -1,76 +1,16 @@
-import React, { useEffect, useState } from "react";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
-  BarChart,
-  Bar,
-  ReferenceArea,
-  Legend,
-  Cell,
-  LabelList,
-} from "recharts";
+import React, { useEffect } from "react";
 
-// =====================================
-// Head meta injection (no visual changes)
-// =====================================
-// Ensures search engines do NOT index this microsite.
-function useNoIndex() {
-  useEffect(() => {
-    let meta = document.querySelector('meta[name="robots"]');
-    if (!meta) {
-      meta = document.createElement('meta');
-      meta.setAttribute('name', 'robots');
-      document.head.appendChild(meta);
-    }
-    meta.setAttribute('content', 'noindex,nofollow');
-  }, []);
-}
+// NOTE: This version removes all external libraries (Recharts, Tailwind CDN, etc.)
+// and uses pure React + inline CSS/SVG so it renders *here* without any runtime deps.
+// Visual copy, layout hierarchy, labels, and numbers are preserved.
 
 // =====================
-// Brand Tokens
-// =====================
-const brand = {
-  emeraldStart: "#10B981", // emerald
-  emeraldMid: "#059669", // darker emerald
-  emeraldEnd: "#047857", // deepest emerald
-  slate: "#0F172A", // slate-900
-  ink: "#111827", // gray-900
-  paper: "#0B0F14", // deep bg
-  card: "#0F141B", // card bg
-  border: "#1F2937", // gray-800
-  text: "#E5E7EB", // gray-200
-  subtext: "#9CA3AF", // gray-400
-  accent: "#22D3EE", // cyan-400
-  positive: "#10B981",
-  neutral: "#4B5563",
-  warn: "#F59E0B",
-};
-
-// Subtle emerald gradient background
-const GradientBG = () => (
-  <div
-    className="fixed inset-0 -z-10"
-    style={{
-      background:
-        "radial-gradient(1200px 600px at 85% -10%, rgba(16,185,129,0.20), transparent 60%), radial-gradient(800px 400px at -10% 30%, rgba(34,211,238,0.12), transparent 55%), linear-gradient(180deg, #0B0F14 0%, #0B0F14 100%)",
-    }}
-  />
-);
-
-// =====================
-// Data (accurate to your figures)
+// Data (your figures)
 // =====================
 const last28Days = Array.from({ length: 28 }, (_, i) => ({ day: i + 1, views: 0 }));
-// distribute 10 views across days 1-21 (low baseline)
 [1, 3, 6, 9, 12, 16, 18, 20, 21, 5].forEach((d) => {
   last28Days[d - 1].views = (last28Days[d - 1].views || 0) + 1;
 });
-// last 7 days (days 22-28): sums to 142
 [18, 19, 20, 21, 20, 22, 22].forEach((v, idx) => {
   last28Days[21 + idx].views = v;
 });
@@ -88,88 +28,181 @@ const summary = {
   hotLeads: 1,
 };
 
+const replyRate = Math.round((summary.replies / summary.newConnections) * 100);
+
 const benchmarkBars = [
   { label: "DM Avg (5–20%)", rate: 20 },
   { label: "LinkedIn Paid Email Services (18–25%)", rate: 25 },
-  {
-    label: `Your Reply Rate (~${Math.round((summary.replies / summary.newConnections) * 100)}%)`,
-    rate: Math.round((summary.replies / summary.newConnections) * 100),
-  },
+  { label: `Your Reply Rate (~${replyRate}%)`, rate: replyRate },
 ];
 
-const stackedMessageData = [
-  {
-    name: "Connections",
-    total: summary.newConnections,
-    replied: summary.replies,
-    notReplied: summary.newConnections - summary.replies,
-  },
-];
-
-const engagementData = [
-  { name: "Engaged", value: summary.engaged },
-  { name: "Not Yet Engaged", value: summary.nonEngaged },
-];
+// =====================================
+// Head meta (no visual changes)
+// =====================================
+function useNoIndex() {
+  useEffect(() => {
+    try {
+      let meta = document.querySelector('meta[name="robots"]');
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute('name', 'robots');
+        document.head.appendChild(meta);
+      }
+      meta.setAttribute('content', 'noindex,nofollow');
+    } catch (_) {}
+  }, []);
+}
 
 // =====================
-// Small Components
+// Styling
 // =====================
+const css = `
+  .microsite { --bg:#0B0F14; --paper:#0F141B; --border:#1F2937; --text:#E5E7EB; --muted:#9CA3AF; --accent:#22D3EE; --em-st:#10B981; --em-md:#059669; --em-end:#047857; --neutral:#4B5563; }
+  .microsite { color:var(--text); background:var(--bg); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
+  .wrap { max-width:1120px; margin:0 auto; padding:32px 16px; }
+  .gradient {
+    position:fixed; inset:0; z-index:-1;
+    background:
+      radial-gradient(1200px 600px at 85% -10%, rgba(16,185,129,0.20), transparent 60%),
+      radial-gradient(800px 400px at -10% 30%, rgba(34,211,238,0.12), transparent 55%),
+      linear-gradient(180deg, #0B0F14 0%, #0B0F14 100%);
+  }
+  .chip { display:inline-flex; gap:8px; align-items:center; border:1px solid rgba(5,150,105,.4); background:rgba(6,95,70,.1); color:#A7F3D0; padding:6px 10px; border-radius:14px; font-size:12px; font-weight:600; letter-spacing:.04em; }
+  h1 { font-size:28px; font-weight:800; margin:12px 0 0; background:linear-gradient(90deg,#A7F3D0,#99F6E4,#67E8F9); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .sub { margin-top:8px; max-width:640px; color:var(--muted); font-size:14px; line-height:1.6; }
+  .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+  .grid { display:grid; gap:16px; }
+  @media (min-width: 768px) { .grid-4{ grid-template-columns: repeat(4, minmax(0,1fr)); } .grid-3{ grid-template-columns: repeat(3, minmax(0,1fr)); } .grid-2{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
+  .card { background:rgba(15,20,27,.9); border:1px solid var(--border); border-radius:18px; padding:16px; }
+  .section { background:var(--paper); border:1px solid var(--border); border-radius:22px; padding:24px; }
+  .section h2 { margin:6px 0 0; font-size:22px; font-weight:700; }
+  .tag { color:#6EE7B7; opacity:.8; text-transform:uppercase; font-size:11px; letter-spacing:.18em; }
+  .stat .label{ color:var(--muted); font-size:13px; letter-spacing:.02em }
+  .stat .val{ margin-top:4px; font-size:28px; font-weight:700 }
+  .stat .sub{ margin-top:4px; color:#94A3B8; font-size:12px }
+  .badge { display:inline-flex; align-items:center; gap:8px; border:1px solid rgba(16,185,129,.5); background:rgba(16,185,129,.1); color:#A7F3D0; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:600 }
+  .btn { border:1px solid var(--border); background:#0b1220; color:var(--text); padding:8px 14px; border-radius:12px; font-size:13px; font-weight:600 }
+  .list { color:#9CA3AF; font-size:14px; line-height:1.6; }
+  .kicker { font-size:12px; color:#9CA3AF; margin-top:8px }
+  .footer { border-top:1px solid var(--border); padding-top:16px; color:#94A3B8; font-size:12px; display:flex; flex-wrap:wrap; gap:12px; justify-content:space-between }
+
+  /* Simple chart scaffolding */
+  .chart { width:100%; height:256px; background:rgba(15,23,42,.4); border:1px solid var(--border); border-radius:16px; padding:8px; }
+  .h48 { height:192px }
+  .bar-row { display:flex; align-items:center; gap:10px }
+  .bar-label { color:#9CA3AF; font-size:12px; min-width:220px }
+  .bar-track { position:relative; flex:1; height:18px; background:#111827; border-radius:9px; overflow:hidden; }
+  .bar-fill { position:absolute; inset:0 0 0 0; width:0%; background:#059669; border-radius:9px }
+  .bar-num { color:#E5E7EB; font-size:12px; margin-left:8px }
+
+  .stack-track { position:relative; width:100%; height:22px; background:#111827; border-radius:11px; overflow:hidden }
+  .stack-a { position:absolute; left:0; top:0; bottom:0; background:#10B981 }
+  .stack-b { position:absolute; right:0; top:0; bottom:0; background:#1F2937 }
+`;
+
+// =====================
+// Helpers for SVG charts
+// =====================
+function AreaChartSVG({ data, color = "#059669" }) {
+  const W = 600, H = 220, P = 20;
+  const maxY = Math.max(...data.map(d => d.views), 1);
+  const sx = (W - 2*P) / (data.length - 1);
+  const sy = (H - 2*P) / maxY;
+
+  const points = data.map((d, i) => [P + i*sx, H - P - d.views*sy]);
+  const dPath = points.map((p, i) => (i ? "L" : "M") + p[0] + "," + p[1]).join(" ");
+
+  // Area fill path
+  const areaPath = dPath + ` L ${P + (data.length-1)*sx},${H-P} L ${P},${H-P} Z`;
+
+  // Shade last 7 days
+  const shadeX1 = P + (data.length - 7 - 1) * sx; // start at day 22 index 21
+  const shadeX2 = P + (data.length - 1) * sx;
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%" role="img" aria-label="Profile views last 28 days">
+      {/* grid lines */}
+      {[0,1,2,3,4].map(i => (
+        <line key={i} x1={P} x2={W-P} y1={P + i*(H-2*P)/4} y2={P + i*(H-2*P)/4} stroke="#1f2937" />
+      ))}
+
+      {/* shaded last 7 days */}
+      <rect x={shadeX1} y={P} width={shadeX2 - shadeX1} height={H-2*P} fill="#10B981" opacity="0.08" />
+
+      {/* area fill */}
+      <defs>
+        <linearGradient id="gArea" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#10B981" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="#047857" stopOpacity="0.15" />
+        </linearGradient>
+      </defs>
+      <path d={areaPath} fill="url(#gArea)" />
+
+      {/* line */}
+      <path d={dPath} fill="none" stroke={color} strokeWidth="2" />
+    </svg>
+  );
+}
+
+function HBar({ label, value, max = 60, accent = false }) {
+  const pct = Math.max(0, Math.min(100, (value / max) * 100));
+  return (
+    <div className="bar-row" style={{margin: '8px 0'}}>
+      <div className="bar-label">{label}</div>
+      <div className="bar-track">
+        <div className="bar-fill" style={{ width: pct + '%', background: accent ? '#059669' : '#4B5563' }} />
+      </div>
+      <div className="bar-num">{value}%</div>
+    </div>
+  );
+}
+
+function StackedBar({ a, b }) {
+  const total = a + b;
+  const pctA = (a / total) * 100;
+  const pctB = 100 - pctA;
+  return (
+    <div className="stack-track">
+      <div className="stack-a" style={{ width: pctA + '%' }} />
+      <div className="stack-b" style={{ width: pctB + '%' }} />
+    </div>
+  );
+}
+
+function VBars({ items }) {
+  const max = Math.max(...items.map(i => i.value), 1);
+  return (
+    <div style={{display:'flex', alignItems:'flex-end', gap:16, height:180}}>
+      {items.map(it => (
+        <div key={it.name} style={{display:'flex', flexDirection:'column', alignItems:'center', gap:8}}>
+          <div style={{width:36, height: (it.value/max)*160, background:'#10B981', borderRadius:8}} />
+          <div style={{fontSize:12, color:'#9CA3AF'}}>{it.name}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// =====================
+// Small UI pieces
+// =====================
+const Badge = ({ children }) => <span className="badge">{children}</span>;
 const Stat = ({ label, value, sub }) => (
-  <div className="rounded-2xl border border-slate-800 bg-[#0F141B] p-4">
-    <div className="text-sm tracking-wide text-gray-400">{label}</div>
-    <div className="mt-1 text-3xl font-semibold text-gray-100">{value}</div>
-    {sub ? <div className="mt-1 text-sm text-gray-500">{sub}</div> : null}
+  <div className="card stat">
+    <div className="label">{label}</div>
+    <div className="val">{value}</div>
+    {sub && <div className="sub">{sub}</div>}
   </div>
 );
 
-const Section = ({ title, tag, children, right }) => (
-  <section className="rounded-3xl border border-slate-800 bg-[#0F141B] p-6 md:p-8">
-    <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-      <div>
-        <div className="text-xs uppercase tracking-widest text-emerald-300/80">{tag}</div>
-        <h2 className="mt-1 text-2xl font-semibold text-gray-100">{title}</h2>
-      </div>
-      {right}
-    </div>
-    {children}
-  </section>
-);
-
-const Badge = ({ children }) => (
-  <span className="inline-flex items-center gap-2 rounded-full border border-emerald-600/50 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300">
-    {children}
-  </span>
-);
-
-const PrintButton = () => (
-  <button
-    onClick={() => window.print()}
-    className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-2 text-sm font-medium text-gray-100 transition hover:bg-slate-900"
-  >
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="opacity-80">
-      <path d="M6 9V4h12v5M6 14H4v6h16v-6h-2M8 17h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-    Print / Save PDF
-  </button>
-);
-
-const ViewsTooltip = ({ active, payload, label }) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="rounded-xl border border-slate-700 bg-slate-900/90 px-3 py-2 text-sm text-gray-200 shadow-lg">
-        <div className="text-gray-400">Day {label}</div>
-        <div className="text-gray-100">Views: {payload[0].value}</div>
-      </div>
-    );
-  }
-  return null;
-};
-
 export default function ClientDeliveryMicrosite() {
   useNoIndex();
-  const [showBenchDetails, setShowBenchDetails] = useState(false);
 
-  // Pipeline steps (explicit roles + second-touch funnel)
+  const engagementData = [
+    { name: "Engaged", value: summary.engaged },
+    { name: "Not Yet Engaged", value: summary.nonEngaged },
+  ];
+
   const pipelineSteps = [
     { title: "Replies → Hit List", role: "My team action" },
     { title: "Engage (Like/Comment)", role: "Your team action" },
@@ -179,226 +212,218 @@ export default function ClientDeliveryMicrosite() {
   ];
 
   return (
-    <div className="min-h-screen bg-transparent text-gray-100">
-      <GradientBG />
+    <div className="microsite">
+      <div className="gradient" />
+      <style>{css}</style>
 
       {/* Header */}
-      <header className="mx-auto max-w-7xl px-4 py-8 md:px-6">
-        <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+      <header className="wrap" style={{paddingBottom: 0}}>
+        <div className="row" style={{justifyContent:'space-between'}}>
           <div>
-            <div className="inline-flex items-center gap-3 rounded-2xl border border-emerald-700/40 bg-emerald-600/10 px-3 py-1 text-xs font-semibold tracking-wider text-emerald-300">
-              Authority Scale — Client Delivery
-            </div>
-            <h1 className="mt-3 bg-gradient-to-r from-emerald-300 via-teal-300 to-cyan-300 bg-clip-text text-3xl font-bold text-transparent md:text-4xl">
-              LinkedIn Progress Report
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-400">
-              While your team finalizes brand decisions, we’ve maintained momentum. Here’s what’s been done and the results to date.
-            </p>
+            <span className="chip">Authority Scale — Client Delivery</span>
+            <h1>LinkedIn Progress Report</h1>
+            <p className="sub">While your team finalizes brand decisions, we’ve maintained momentum. Here’s what’s been done and the results to date.</p>
           </div>
-          <div className="flex items-center gap-3">
-            <Badge>Confidential</Badge>
-            <PrintButton />
+          <div className="row">
+            <span className="badge">Confidential</span>
+            <button className="btn" onClick={() => window.print()}>Print / Save PDF</button>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto grid max-w-7xl gap-6 px-4 pb-20 md:px-6">
+      <main className="wrap" style={{paddingTop:16}}>
         {/* Summary Tiles */}
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="grid grid-4">
           <Stat label="Profile Views (90d)" value={summary.ninetyDayTotal} sub="Total visibility" />
           <Stat label="Views (28d)" value={summary.last28} sub="83% of 90d total" />
           <Stat label="Views (7d)" value={summary.last7} sub="Spike during activation" />
           <Stat label="7–14d Growth" value={`+${summary.growth14dPct}%`} sub="Week-over-week" />
         </div>
 
-        {/* 1. Profile Visibility Growth */}
-        <Section title="Profile Visibility Growth" tag="Visibility Signal™" right={<Badge>+33% in 14d</Badge>}>
-          <div className="grid gap-6 md:grid-cols-3">
-            <div className="md:col-span-2">
-              <div className="h-64 w-full rounded-2xl border border-slate-800 bg-slate-900/40 p-3">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={last28Days} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="gArea" x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stopColor={brand.emeraldStart} stopOpacity={0.35} />
-                        <stop offset="100%" stopColor={brand.emeraldEnd} stopOpacity={0.15} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid stroke="#1f2937" vertical={false} />
-                    <XAxis dataKey="day" tick={{ fill: "#9CA3AF", fontSize: 12 }} />
-                    <YAxis tick={{ fill: "#9CA3AF", fontSize: 12 }} />
-                    <Tooltip content={<ViewsTooltip />} />
-                    {/* Shade last 7 days */}
-                    <ReferenceArea x1={22} x2={28} strokeOpacity={0} fill="#10B981" fillOpacity={0.08} />
-                    <Area type="monotone" dataKey="views" stroke={brand.emeraldMid} fill="url(#gArea)" strokeWidth={2} />
-                  </AreaChart>
-                </ResponsiveContainer>
+        {/* Profile Visibility Growth */}
+        <section className="section" style={{marginTop:16}}>
+          <div className="row" style={{alignItems:'flex-end', justifyContent:'space-between'}}>
+            <div>
+              <div className="tag">Visibility Signal™</div>
+              <h2>Profile Visibility Growth</h2>
+            </div>
+            <Badge>+33% in 14d</Badge>
+          </div>
+
+          <div className="grid grid-3" style={{marginTop:16}}>
+            <div style={{gridColumn:'span 2'}}>
+              <div className="chart">
+                <AreaChartSVG data={last28Days} />
               </div>
             </div>
-            <div className="flex flex-col justify-between gap-4">
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 text-sm leading-6 text-gray-300">
-                <p>
-                  <strong className="text-gray-100">What this shows:</strong> Almost all profile traffic arrived during our active period. The shaded area marks the last 7 days (142 views), within a 28-day window totaling 152 views.
-                </p>
-                <ul className="mt-3 list-disc pl-5 text-gray-400">
-                  <li>183 views in 90 days</li>
-                  <li>152 in last 28 days</li>
-                  <li>142 in last 7 days</li>
-                </ul>
-              </div>
+            <div className="card" style={{fontSize:14, lineHeight:1.6}}>
+              <p><strong style={{color:'#E5E7EB'}}>What this shows:</strong> Almost all profile traffic arrived during our active period. The shaded area marks the last 7 days (142 views), within a 28-day window totaling 152 views.</p>
+              <ul className="list" style={{marginTop:12}}>
+                <li>183 views in 90 days</li>
+                <li>152 in last 28 days</li>
+                <li>142 in last 7 days</li>
+              </ul>
             </div>
           </div>
-        </Section>
+        </section>
 
-        {/* 2. Authority Activation Messages */}
-        <Section title="Authority Activation Messages" tag="Message Protocol™" right={<Badge>{summary.responseRate}% reply rate</Badge>}>
-          <div className="grid gap-6 md:grid-cols-3">
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 md:col-span-2">
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={stackedMessageData}>
-                    <CartesianGrid stroke="#1f2937" vertical={false} />
-                    <XAxis dataKey="name" tick={{ fill: "#9CA3AF", fontSize: 12 }} />
-                    <YAxis tick={{ fill: "#9CA3AF", fontSize: 12 }} />
-                    <Tooltip cursor={{ fill: "#0f172a" }} formatter={(v) => [v, ""]} />
-                    <Legend wrapperStyle={{ color: "#9CA3AF" }} />
-                    <Bar dataKey="replied" stackId="a" name="Replied" fill={brand.positive} radius={[8, 8, 0, 0]} />
-                    <Bar dataKey="notReplied" stackId="a" name="No Reply Yet" fill="#1F2937" radius={[8, 8, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-gray-400">
-                <Badge>145 connections messaged</Badge>
-                <Badge>72 replied</Badge>
-                <Badge>1 hot lead → call requested</Badge>
-                <Badge>Funnel not yet active</Badge>
-              </div>
+        {/* Authority Activation Messages */}
+        <section className="section" style={{marginTop:16}}>
+          <div className="row" style={{alignItems:'flex-end', justifyContent:'space-between'}}>
+            <div>
+              <div className="tag">Message Protocol™</div>
+              <h2>Authority Activation Messages</h2>
             </div>
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-                <h4 className="mb-2 text-sm font-semibold text-gray-200">Benchmark Comparison</h4>
-                <div className="h-48 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={benchmarkBars} layout="vertical" margin={{ left: 10, right: 60, top: 10, bottom: 10 }}>
-                      <CartesianGrid stroke="#1f2937" />
-                      <XAxis type="number" domain={[0, 60]} hide />
-                      <YAxis type="category" dataKey="label" tick={{ fill: "#9CA3AF", fontSize: 12 }} width={460} />
-                      <Tooltip formatter={(v) => [`${v}%`, "Reply Rate"]} />
-                      <Bar dataKey="rate" radius={[0, 8, 8, 0]}>
-                        {benchmarkBars.map((_, idx) => (
-                          <Cell key={`bench-cell-${idx}`} fill={idx < 2 ? brand.neutral : brand.emeraldMid} />
-                        ))}
-                        <LabelList dataKey="rate" position="right" formatter={(v) => `${v}%`} />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
+            <Badge>{summary.responseRate}% reply rate</Badge>
+          </div>
+
+          <div className="grid grid-3" style={{marginTop:16}}>
+            <div className="card" style={{gridColumn:'span 2'}}>
+              <div style={{height:256, display:'flex', flexDirection:'column', justifyContent:'center', gap:12}}>
+                <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+                  <div style={{color:'#9CA3AF', fontSize:12}}>Connections</div>
+                  <div style={{color:'#9CA3AF', fontSize:12}}>{summary.newConnections}</div>
                 </div>
-                <p className="mt-2 text-xs leading-5 text-gray-400">
-                  Typical ranges: DMs (5–20%), LinkedIn Paid Email Services (18–25%). Your current reply rate is ~50%.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 text-sm leading-6 text-gray-300">
-                <p>
-                  Most people pitch immediately or use a disguised “give.” Your message is neutral and confident — no pressure, no pretense — which is why people reply at ~50%.
-                </p>
+                <StackedBar a={summary.replies} b={summary.newConnections - summary.replies} />
+                <div className="row" style={{gap:8, flexWrap:'wrap', marginTop:8}}>
+                  <Badge>145 connections messaged</Badge>
+                  <Badge>72 replied</Badge>
+                  <Badge>1 hot lead → call requested</Badge>
+                  <Badge>Funnel not yet active</Badge>
+                </div>
               </div>
             </div>
-          </div>
-        </Section>
 
-        {/* 3. Pipeline Activation */}
-        <Section title="Pipeline Activation" tag="Hit List Process™" right={<Badge>Call request pre-funnel</Badge>}>
-          <div className="grid gap-6 md:grid-cols-5">
-            {pipelineSteps.map((step, idx) => (
-              <div key={step.title} className="relative rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-                <div className="text-sm font-semibold text-gray-200">Step {idx + 1}</div>
-                <div className="mt-1 text-base text-gray-300">{step.title}</div>
-                {idx < pipelineSteps.length - 1 && (
-                  <div className="pointer-events-none absolute -right-3 top-1/2 hidden translate-y-[-50%] md:block">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <path d="M5 12h14m-6-6 6 6-6 6" stroke={brand.positive} strokeWidth="1.5" strokeLinecap="round" />
-                    </svg>
-                  </div>
+            <div className="card">
+              <h4 style={{margin:'2px 0 8px', fontSize:14, fontWeight:700}}>Benchmark Comparison</h4>
+              <div className="h48">
+                {benchmarkBars.map((b, i) => (
+                  <HBar key={b.label} label={b.label} value={b.rate} max={60} accent={i===2} />
+                ))}
+              </div>
+              <p className="kicker">Typical ranges: DMs (5–20%), LinkedIn Paid Email Services (18–25%). Your current reply rate is ~50%.</p>
+            </div>
+          </div>
+
+          <div className="card" style={{marginTop:12, fontSize:14, lineHeight:1.65}}>
+            <p>Most people pitch immediately or use a disguised “give.” Your message is neutral and confident — no pressure, no pretense — which is why people reply at ~50%.</p>
+          </div>
+        </section>
+
+        {/* Pipeline Activation */}
+        <section className="section" style={{marginTop:16}}>
+          <div className="row" style={{alignItems:'flex-end', justifyContent:'space-between'}}>
+            <div>
+              <div className="tag">Hit List Process™</div>
+              <h2>Pipeline Activation</h2>
+            </div>
+            <Badge>Call request pre-funnel</Badge>
+          </div>
+
+          <div className="grid grid-3" style={{gridTemplateColumns:'repeat(5, minmax(0,1fr))', marginTop:16}}>
+            {[
+              "Replies → Hit List",
+              "Engage (Like/Comment)",
+              "DM Nurture Sequence Funnel™",
+              "Second Touch Momentum Funnel™ (No Response 7d)",
+              "Booked Call"
+            ].map((title, idx, arr) => (
+              <div key={title} className="card" style={{position:'relative'}}>
+                <div style={{fontSize:14, fontWeight:600}}>Step {idx+1}</div>
+                <div style={{marginTop:4, color:'#D1D5DB'}}>{title}</div>
+                {idx < arr.length - 1 && (
+                  <div style={{position:'absolute', right:-12, top:'50%', transform:'translateY(-50%)', display:'none'}} aria-hidden />
                 )}
-                <div className="mt-3 text-xs text-gray-400">{step.role}</div>
+                <div style={{marginTop:8, fontSize:12, color:'#9CA3AF'}}>{[
+                  "My team action",
+                  "Your team action",
+                  "Your team action (launching next)",
+                  "My team action",
+                  "Already 1 requested (pre-funnel)"
+                ][idx]}</div>
               </div>
             ))}
           </div>
-        </Section>
+        </section>
 
-        {/* 3b. What Happens Next */}
-        <Section title="What Happens Next" tag="Two Tracks">
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-              <h4 className="text-base font-semibold text-gray-200">Track One: Managed on My Side</h4>
-              <ul className="mt-2 list-disc pl-5 text-sm text-gray-400">
-                <li>Add every reply to the <strong className="text-gray-200">Hit List</strong>.</li>
-                <li>For anyone who hasn’t replied after 7 days, we send a second message and start the <strong className="text-gray-200">Second Touch Momentum Funnel™</strong>.</li>
+        {/* What Happens Next */}
+        <section className="section" style={{marginTop:16}}>
+          <div className="row" style={{alignItems:'flex-end', justifyContent:'space-between'}}>
+            <div>
+              <div className="tag">Two Tracks</div>
+              <h2>What Happens Next</h2>
+            </div>
+          </div>
+
+          <div className="grid grid-2" style={{marginTop:16}}>
+            <div className="card">
+              <h4 style={{fontSize:16, fontWeight:700}}>Track One: Managed on My Side</h4>
+              <ul className="list" style={{marginTop:8}}>
+                <li>Add every reply to the <strong style={{color:'#E5E7EB'}}>Hit List</strong>.</li>
+                <li>For anyone who hasn’t replied after 7 days, we send a second message and start the <strong style={{color:'#E5E7EB'}}>Second Touch Momentum Funnel™</strong>.</li>
                 <li>Continue first messages to new ICP connections to grow the pool.</li>
               </ul>
             </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-              <h4 className="text-base font-semibold text-gray-200">Track Two: Managed on Your Side</h4>
-              <ul className="mt-2 list-disc pl-5 text-sm text-gray-400">
+            <div className="card">
+              <h4 style={{fontSize:16, fontWeight:700}}>Track Two: Managed on Your Side</h4>
+              <ul className="list" style={{marginTop:8}}>
                 <li>You/your team engage their posts (likes/comments) to keep you visible and top of mind.</li>
-                <li>Follow up with the <strong className="text-gray-200">72 replies</strong> (~1 week later) to move toward a call.</li>
-                <li>Use the <strong className="text-gray-200">DM Nurture Sequence Funnel™</strong> scripts and timing I provide.</li>
+                <li>Follow up with the <strong style={{color:'#E5E7EB'}}>72 replies</strong> (~1 week later) to move toward a call.</li>
+                <li>Use the <strong style={{color:'#E5E7EB'}}>DM Nurture Sequence Funnel™</strong> scripts and timing I provide.</li>
                 <li>If preferred, my team can manage this as an add-on service.</li>
               </ul>
             </div>
           </div>
-        </Section>
+        </section>
 
-        {/* 4. Engagement & Visibility Boost */}
-        <Section title="Engagement & Visibility Boost" tag="Engagement Ratio™">
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={engagementData}>
-                    <CartesianGrid stroke="#1f2937" vertical={false} />
-                    <XAxis dataKey="name" tick={{ fill: "#9CA3AF", fontSize: 12 }} />
-                    <YAxis tick={{ fill: "#9CA3AF", fontSize: 12 }} />
-                    <Tooltip formatter={(v) => [v, "Connections"]} />
-                    <Bar dataKey="value" fill={brand.positive} radius={[8, 8, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+        {/* Engagement & Visibility Boost */}
+        <section className="section" style={{marginTop:16}}>
+          <div className="row" style={{alignItems:'flex-end', justifyContent:'space-between'}}>
+            <div>
+              <div className="tag">Engagement Ratio™</div>
+              <h2>Engagement & Visibility Boost</h2>
             </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 text-sm leading-6 text-gray-300">
-              <p>
-                <strong className="text-gray-100">What this shows:</strong> Half of new connections are already interacting (72 of 145). This is a strong base for content launch — posts will start with traction instead of zero.
-              </p>
-              <ul className="mt-3 list-disc pl-5 text-gray-400">
+          </div>
+
+          <div className="grid grid-2" style={{marginTop:16}}>
+            <div className="card">
+              <VBars items={engagementData} />
+            </div>
+            <div className="card" style={{fontSize:14, lineHeight:1.6}}>
+              <p><strong style={{color:'#E5E7EB'}}>What this shows:</strong> Half of new connections are already interacting (72 of 145). This is a strong base for content launch — posts will start with traction instead of zero.</p>
+              <ul className="list" style={{marginTop:12}}>
                 <li>Total new connections: 145</li>
                 <li>Engaged: 72</li>
                 <li>Not yet engaged: 73</li>
               </ul>
             </div>
           </div>
-        </Section>
+        </section>
 
-        {/* 5. Summary of Impact */}
-        <Section title="Summary of Impact" tag="Impact Dashboard™">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+        {/* Summary of Impact */}
+        <section className="section" style={{marginTop:16}}>
+          <div className="row" style={{alignItems:'flex-end', justifyContent:'space-between'}}>
+            <div>
+              <div className="tag">Impact Dashboard™</div>
+              <h2>Summary of Impact</h2>
+            </div>
+          </div>
+
+          <div className="grid grid-4" style={{marginTop:16}}>
             <Stat label="Visibility Growth" value={`+${summary.growth14dPct}%`} sub="Past 14 days" />
             <Stat label="Reply Rate" value={`${summary.responseRate}%`} sub="vs 15–25% typical" />
             <Stat label="Hot Leads" value={summary.hotLeads} sub="Call requested pre-funnel" />
             <Stat label="Hit List Size" value={summary.replies} sub="Replies being nurtured" />
           </div>
-          <p className="mt-4 text-sm text-gray-400">
-            Data as of Aug 18, 2025. Figures reflect your provided stats: 183 (90d), 152 (28d), 142 (7d), +33% growth, 145 connections, 72 replies (~50%), and 1 hot lead requesting a call before the DM Nurture Sequence Funnel™ is live.
-          </p>
-        </Section>
+          <p className="kicker">Data as of Aug 18, 2025. Figures reflect your provided stats: 183 (90d), 152 (28d), 142 (7d), +33% growth, 145 connections, 72 replies (~50%), and 1 hot lead requesting a call before the DM Nurture Sequence Funnel™ is live.</p>
+        </section>
       </main>
 
       {/* Footer */}
-      <footer className="mx-auto max-w-7xl px-4 pb-10 pt-2 md:px-6">
-        <div className="flex flex-col items-start justify-between gap-3 border-t border-slate-800 pt-6 text-xs text-gray-500 md:flex-row md:items-center">
+      <footer className="wrap" style={{paddingTop:8, paddingBottom:28}}>
+        <div className="footer">
           <div>© 2025 Authority Scale™ — Client Delivery Microsite</div>
-          <div className="opacity-80">Press “Print / Save PDF” for a shareable export</div>
+          <div className="kicker" style={{margin:0}}>Press “Print / Save PDF” for a shareable export</div>
         </div>
       </footer>
     </div>
